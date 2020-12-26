@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 typedef unsigned char byte;
 
@@ -99,9 +100,7 @@ UART0_int_disable(void)
 	VICIntEnable &= !UART0_INT_MASK;
 }
 
-int
-UART_init (void)
-{
+int UART_init (void) {
 	if (UART_initialized)
 		return UART_ERR_ALREADY_INITIALIZED;
 		
