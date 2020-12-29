@@ -39,6 +39,8 @@ delay(time_t seconds)
 	VICIntEnable |= TIMER0_INT_SRC;
 	
 	while (!fiq_int_catched);
+	VICIntSelect = 0x00000000;
+	VICVectAddr = 0;
 	fiq_int_catched = false;
 }
 

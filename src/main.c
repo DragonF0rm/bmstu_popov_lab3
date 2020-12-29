@@ -13,7 +13,7 @@
 #define TASK_MIN 0
 #define TASK_MAX 99
 
-#define CMD_DELAY 10
+#define CMD_DELAY 1
 
 #define arr_len(_arr) (sizeof(_arr) / sizeof((_arr)[0]))
 
@@ -31,10 +31,7 @@ int
 dec_to_bin(int dec, char *buf, size_t buf_size);
 
 void
-handle_cmd(void) __irq;
-void
-handle_answer(void) __irq;
-/***/
+uart_int(void) __irq;
 
 static
 int
@@ -64,10 +61,26 @@ dec_to_bin(int dec, char *buf, size_t buf_size)
 	return 0;
 }
 
+static bool flag_uart_int = false;
+
 void
-handle_cmd(void) __irq
+uart_int(void) __irq
 {
+	flag_uart_int = true;
+}
+
+static bool flag_handle_cmd = true;
+
+void
+handle_cmd_n_answer(void)
+{
+	while(!flag_uart_int);
+	flag_uart_int = false;
+	
+	int answer = 0;
 	UART0_int_disable();
+	if(!flag_handle_cmd)
+		goto handle_answer;
 	
 	char cmd_buf[CMDBUF_LEN+1] = "\0";
 	int err = UART0_read_line(cmd_buf, arr_len(cmd_buf));
@@ -82,7 +95,7 @@ handle_cmd(void) __irq
 		current_task = make_task();
 		dec_to_bin(current_task, bintask_buf, arr_len(bintask_buf));
 		UART0_write_line_fmt("-> Task: turn into hex %s\n", bintask_buf);
-		UART0_reg_int_handler(handle_answer);
+		flag_handle_cmd = false;
 		goto cleanup;
 	} else {
 		goto error;
@@ -92,13 +105,9 @@ error:
 	UART0_write_line("-> unknown command\n");
 cleanup:
 	UART0_int_enable();
-}
-
-void
-handle_answer(void) __irq
-{
-	int answer = 0;
+	return;
 	
+handle_answer:
 	if (UART0_read_line(hextask_buf, arr_len(hextask_buf))) {
 		UART0_write_line("-> unable to read answer");
 		goto fail;
@@ -117,12 +126,12 @@ handle_answer(void) __irq
 		goto fail;
 	
 	UART0_write_line("-> correct\n");
-	goto cleanup;
+	goto cleanup_answer;
 
 fail:
 	UART0_write_line("-> incorrect\n");
-cleanup:
-	UART0_reg_int_handler(handle_cmd);
+cleanup_answer:
+	flag_handle_cmd = true;
 	UART0_int_enable();
 }
 
@@ -132,8 +141,9 @@ main(void)
 	assert(!UART_init());
 	timer0_init();
 	srand(0);
-	UART0_reg_int_handler(handle_cmd);
+	UART0_reg_int_handler(uart_int);
 	UART0_int_enable();
-	while(listening);
+	while(listening)
+		handle_cmd_n_answer();
 	exit(0);
 }
