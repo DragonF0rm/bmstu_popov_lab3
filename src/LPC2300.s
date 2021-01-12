@@ -41,7 +41,6 @@
 ; *  from on-chip RAM starting at address 0x40000000. 
 ; */
 
-
 ; Standard definitions of Mode bits and Interrupt (I & F) flags in PSRs
 
 Mode_USR        EQU     0x10
@@ -609,6 +608,7 @@ Vectors         LDR     PC, Reset_Addr
                 NOP                            ; Reserved Vector 
 ;               LDR     PC, IRQ_Addr
                 LDR     PC, [PC, #-0x0120]     ; Vector from VicVectAddr
+				IMPORT	FIQ_int
                 LDR     PC, FIQ_Addr
 
 Reset_Addr      DCD     Reset_Handler
@@ -618,14 +618,14 @@ PAbt_Addr       DCD     PAbt_Handler
 DAbt_Addr       DCD     DAbt_Handler
                 DCD     0                      ; Reserved Address 
 IRQ_Addr        DCD     IRQ_Handler
-FIQ_Addr        DCD     FIQ_Handler
+FIQ_Addr 		DCD		FIQ_int
 
 Undef_Handler   B       Undef_Handler
 SWI_Handler     B       SWI_Handler
 PAbt_Handler    B       PAbt_Handler
 DAbt_Handler    B       DAbt_Handler
 IRQ_Handler     B       IRQ_Handler
-FIQ_Handler     B       FIQ_Handler
+; FIQ_Handler     B       FIQ_Handler
 
 
 ; Reset Handler
