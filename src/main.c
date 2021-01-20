@@ -13,7 +13,7 @@
 #define TASK_MIN 0
 #define TASK_MAX 99
 
-#define CMD_DELAY 1
+#define CMD_DELAY 10
 
 #define arr_len(_arr) (sizeof(_arr) / sizeof((_arr)[0]))
 
